@@ -2,7 +2,7 @@
   "id": "./index.html",
   "name": "CoopLedger Cooperative Accounting",
   "short_name": "CoopLedger",
-  "description": "Premium multi-project cooperative accounting with explicit Money In / Money Out control, project operations, analytics, audit trail and print-ready reporting.",
+  "description": "Premium multi-project cooperative accounting with explicit Money In / Money Out control, exact comparative cooperative submission reports, analytics, audit trail and print-ready reporting.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
