@@ -1,23 +1,53 @@
 {
-  "id":"./index.html",
-  "name":"CoopLedger Cooperative Accounting",
-  "short_name":"CoopLedger",
-  "description":"Multi-project cooperative accounting, operational analytics, reporting and financial control.",
-  "start_url":"./index.html",
-  "scope":"./",
-  "display":"standalone",
-  "display_override":["window-controls-overlay","standalone"],
-  "orientation":"any",
-  "background_color":"#f4f2ed",
-  "theme_color":"#0f172a",
-  "categories":["business","finance","productivity"],
-  "prefer_related_applications":false,
-  "icons":[
-    {"src":"icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  "id": "./index.html",
+  "name": "CoopLedger Cooperative Accounting",
+  "short_name": "CoopLedger",
+  "description": "Premium multi-project cooperative accounting with explicit Money In / Money Out control, project operations, analytics, audit trail and print-ready reporting.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
   ],
-  "shortcuts":[
-    {"name":"Open CoopLedger","short_name":"Dashboard","url":"./index.html","icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"}]}
+  "orientation": "any",
+  "background_color": "#f4f2ed",
+  "theme_color": "#0f172a",
+  "categories": [
+    "business",
+    "finance",
+    "productivity"
   ],
-  "launch_handler":{"client_mode":"navigate-existing"}
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open CoopLedger",
+      "short_name": "Dashboard",
+      "url": "./index.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

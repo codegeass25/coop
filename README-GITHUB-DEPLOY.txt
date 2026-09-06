@@ -1,4 +1,4 @@
-COOPLEDGER v1.7.0 FRONTEND - GITHUB PAGES PWA
+COOPLEDGER v1.8.0 FRONTEND - GITHUB PAGES PWA
 =================================================
 Upload ONLY the CONTENTS of this folder to the GitHub Pages repository/branch.
 
