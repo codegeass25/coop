@@ -1,0 +1,26 @@
+COOPLEDGER v2.1.0 - GITHUB PAGES FRONTEND ONLY
+================================================
+IMPORTANT: EXTRACT THIS ZIP FIRST. DO NOT upload the ZIP itself as the website.
+
+Upload these CONTENTS to the ROOT of your GitHub Pages repository:
+- index.html
+- manifest.json
+- service-worker.js
+- .nojekyll
+- icons/icon-192.png
+- icons/icon-512.png
+
+If your repository already contains a CNAME file for a custom domain, KEEP it.
+Do NOT upload BACKEND-LOCAL-CLOUDFLARE, node_modules, cooperative.db, secrets, backups, logs, or tunnel tokens.
+
+GitHub web upload:
+1. Extract this ZIP on Windows.
+2. Open the extracted folder.
+3. In GitHub repo root: Add file > Upload files.
+4. Drag index.html, manifest.json, service-worker.js, .nojekyll, and the icons folder into the upload box.
+5. Commit message: Upgrade CoopLedger frontend to v2.1.0
+6. Commit directly to main (if your repo permits it).
+7. Wait about 1-3 minutes, then hard refresh the site (Ctrl+F5).
+
+Production API expected by this frontend:
+https://coop.mdmsportal.uk
