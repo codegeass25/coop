@@ -1,4 +1,4 @@
-const CACHE='coopledger-github-pwa-v2.1.0-senior-ui-r1';
+const CACHE='coopledger-github-pwa-v2.1.0-finance-cleanup-r2';
 const SHELL=['./index.html','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('coopledger-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
