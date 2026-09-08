@@ -2,7 +2,7 @@
   "id": "./index.html",
   "name": "CoopLedger Cooperative Accounting",
   "short_name": "CoopLedger",
-  "description": "Premium multi-project cooperative accounting with Money Center, dynamic 2+ period comparative reports, transaction-itemized project statements, consolidated reporting, analytics and audit trail.",
+  "description": "Full cooperative accounting with historical migration, shared member/customer/supplier records, receivables/payables, bank reconciliation, fixed assets, cooperative share capital and surplus allocation, project operations, reporting and audit controls.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
