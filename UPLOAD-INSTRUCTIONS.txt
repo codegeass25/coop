@@ -1,4 +1,4 @@
-COOPLEDGER v2.1.0 - GITHUB PAGES FRONTEND ONLY
+COOPLEDGER v3.2.0 - GITHUB PAGES FRONTEND ONLY
 ================================================
 IMPORTANT: EXTRACT THIS ZIP FIRST. DO NOT upload the ZIP itself as the website.
 
@@ -18,9 +18,11 @@ GitHub web upload:
 2. Open the extracted folder.
 3. In GitHub repo root: Add file > Upload files.
 4. Drag index.html, manifest.json, service-worker.js, .nojekyll, and the icons folder into the upload box.
-5. Commit message: Upgrade CoopLedger frontend to v2.1.0
+5. Commit message: Upgrade CoopLedger frontend to v3.2.0 accounting release
 6. Commit directly to main (if your repo permits it).
 7. Wait about 1-3 minutes, then hard refresh the site (Ctrl+F5).
 
 Production API expected by this frontend:
 https://coop.mdmsportal.uk
+
+Before allowing users to post, open https://coop.mdmsportal.uk/api/health and verify it reports ok=true and database=ok.

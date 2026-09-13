@@ -1,4 +1,4 @@
-COOPLEDGER v2.1.0 FRONTEND - GITHUB PAGES PWA
+COOPLEDGER v3.2.0 FRONTEND - GITHUB PAGES PWA
 ================================================
 
 Upload ONLY the contents of this FRONTEND-GITHUB-PAGES folder to the GitHub Pages repository.
@@ -13,9 +13,15 @@ Keep together:
 DO NOT upload backend files, SQLite database, backups, credentials or Cloudflare tunnel tokens.
 
 Production API target: https://coop.mdmsportal.uk
-PWA cache: coopledger-github-pwa-v2.1.0
+Before publishing, verify this hostname points to the healthy private backend tunnel.
+PWA cache: refreshed for this accounting release.
 
-v2.1 reporting UI
+Release validation
+- Load the site in a private/incognito window and sign in.
+- Verify the API health endpoint returns database: ok before users post transactions.
+- Hard-refresh once after publishing so the new service worker replaces prior offline assets.
+
+Reporting UI
 - Project reports: ITEMIZED comparative detail from actual posted history.
 - Super Admin Consolidated: GENERAL by default, optional ITEMIZED.
 - Period builders: YEARS / MONTHS / WEEKS / CUSTOM, minimum 2 and maximum 36 periods.
