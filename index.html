@@ -196,6 +196,30 @@ body{line-height:1.5}
 @media (max-width:429px){.page-head .actions,.actions,.quick-actions,.official-actions,.hero-actions,.modal-foot{grid-template-columns:1fr!important}.mobile-bottom-nav{left:6px;right:6px}.mobile-nav-btn{font-size:10px}.content{padding-left:10px!important;padding-right:10px!important}}
 @media print{.mobile-bottom-nav{display:none!important}.app{padding-bottom:0!important}}
 
+/* ===== CoopLedger Desktop/Laptop Sidebar Scroll Fix • 2026-09-15 ===== */
+@media (min-width:1200px){
+  .sidebar{
+    height:100dvh!important;
+    max-height:100dvh!important;
+    overflow:hidden!important;
+  }
+  .sidebar>nav{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.38) transparent;
+    padding-right:4px;
+  }
+  .sidebar>nav::-webkit-scrollbar{width:7px}
+  .sidebar>nav::-webkit-scrollbar-track{background:transparent}
+  .sidebar>nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.30);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+  .sidebar>nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.52);background-clip:padding-box}
+  .side-brand,.sidebar-footer{flex:0 0 auto}
+}
 </style>
 </head>
 <body>
