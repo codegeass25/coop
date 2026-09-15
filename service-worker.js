@@ -1,4 +1,4 @@
-const CACHE='coopledger-github-pwa-v3.4.0-final-p01-crop10-project-edit-p02-20260915';
+const CACHE='coopledger-github-pwa-v3.4.0-operations-control-decimal-fieldforms-20260915';
 const SHELL=['./index.html','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('coopledger-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
