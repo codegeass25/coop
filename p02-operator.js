@@ -14,9 +14,9 @@ const p02OperatorPreviousRegisterLoader = loadProjectOperationsRegister;
 const p02OperatorPreviousClose = closeModal, p02OperatorPreviousRequestClose = requestCloseModal;
 const p02OperatorPreviousModalFactory = modal;
 let p02View = 'overview', p02ViewKey = '', p02Data = null, p02LoadSequence = 0;
-let p02RecordSequence = 0, p02Pending = null, p02Posting = false, p02ReceiveRequest = '', p02DispatchStock = null, p02DispatchSequence = 0, p02SaleSequence = 0;
+let p02RecordSequence = 0, p02Pending = null, p02Posting = false, p02ReceiveRequest = '', p02DispatchStock = null, p02DispatchSequence = 0, p02SaleSequence = 0, p02BalanceSequence = 0;
 let p02DialogSequence=0;
-modal = function(...args){++p02DialogSequence;return p02OperatorPreviousModalFactory(...args);};
+modal = function(...args){++p02DialogSequence;p02Pending=null;return p02OperatorPreviousModalFactory(...args);};
 closeModal = function() { if(p02Posting)return; ++p02DialogSequence;p02Pending=null; return p02OperatorPreviousClose(); };
 requestCloseModal = function() { if(p02Posting)return; return p02OperatorPreviousRequestClose(); };
 loadProjectOperationsRegister = async function() {
@@ -36,15 +36,19 @@ const p02IsProject = () => currentProjectObj()?.code === 'P02';
 const p02CanSetup = () => roleIs('SUPERADMIN', 'PROJECT_MANAGER', 'MANAGER', 'ADMIN');
 const p02NameKey = v => String(v || '').normalize('NFKC').trim().toUpperCase().replace(/\s+/g, '');
 refreshSettlementBalance = async function(kind) {
-  if(!p02IsProject()||kind!=='AR')return p02OperatorPreviousSettlementBalance(kind);
-  const date=p02Value('settleDate')||today(),pid=currentPid();
+  if(!p02IsProject()||!['AR','AP'].includes(kind))return p02OperatorPreviousSettlementBalance(kind);
+  const form=$('settleDate');if(!form)return;
+  const seq=++p02BalanceSequence,date=form.value||today(),pid=currentPid();
+  const current=()=>seq===p02BalanceSequence&&form===$('settleDate')&&form.isConnected&&(form.value||today())===date&&currentPid()===pid;
   window.projectSettlementBalance=0;
+  if($('settleBal'))$('settleBal').value='Loading…';
   try{
-    const [r,cs]=await Promise.all([api(`/api/reports?projectId=${pid}&from=1900-01-01&to=${date}`),api(`/api/palay/consignment?projectId=${pid}&to=${date}`)]);
-    if(!$('settleDate')||p02Value('settleDate')!==date||currentPid()!==pid)return;
-    const balance=Math.max(0,Number(r.balance_sheet.assets.find(x=>x.code==='1100')?.amount||0)-Number(cs.totals.unremitted_ar||0));
-    window.projectSettlementBalance=balance;$('settleBal').value=money(balance);$('settleAmt').value=balance?balance.toFixed(2):'';
-  }catch(e){window.projectSettlementBalance=0;if($('settleBal'))$('settleBal').value='Unable to check balance';toast(p02PlainError(e),'error');}
+    const [r,cs]=await Promise.all([api(`/api/reports?projectId=${pid}&from=1900-01-01&to=${date}`),kind==='AR'?api(`/api/palay/consignment?projectId=${pid}&to=${date}`):Promise.resolve(null)]);
+    if(!current())return;
+    const rows=kind==='AR'?r.balance_sheet.assets:r.balance_sheet.liabilities,code=kind==='AR'?'1100':'2000';
+    const balance=Math.max(0,Number(rows.find(x=>x.code===code)?.amount||0)-Number(cs?.totals.unremitted_ar||0));
+    window.projectSettlementBalance=balance;$('settleBal').value=money(balance);if(!Number($('settleAmt').value))$('settleAmt').value=balance?balance.toFixed(2):'';
+  }catch(e){if(!current())return;window.projectSettlementBalance=0;if($('settleBal'))$('settleBal').value='Unable to check balance';toast(p02PlainError(e),'error');}
 };
 const p02AsOf = () => fy().to < today() ? fy().to : today();
 const p02OptionLabel = id => $(id)?.selectedOptions?.[0]?.textContent || p02Value(id);
@@ -263,8 +267,7 @@ async function p02OpenWalkIn(batchId=null) {
   await palayModal('sale',batchId);
 }
 async function p02OpenStoreDispatch(batchId=null) {
-  await consignmentDispatchModal();
-  if ($('cdBatch') && batchId) { $('cdBatch').value = batchId; $('cdBatch').dispatchEvent(new Event('change')); }
+  return consignmentDispatchModal(batchId);
 }
 function p02SimplifyExistingModal(kind) {
   p02MarkModal();
@@ -291,18 +294,19 @@ function p02ValidateSale(){
   const button=$('p02SaleReview');if(!button)return;const av=window.p02SaleAvailability?.[p02Value('psItem')],qty=p02Numeric('psQty'),price=p02Numeric('psPrice'),factor=p02UnitFactor(p02Value('psUnit'));
   button.disabled=!(av&&av.as_of===p02Value('psDate')&&Number(av.batch_id||0)===p02Numeric('psBatch')&&p02Value('psCustomer').trim()&&Number.isFinite(qty)&&qty>0&&Number.isFinite(price)&&price>0&&qty*factor<=av.total_warehouse_qty+.0001);
 }
-consignmentDispatchModal = async function() {
+consignmentDispatchModal = async function(batchId=null) {
   if(!p02IsProject())return p02OperatorPreviousDispatch();
   const stores=window.consignmentData?.consignees||[];if(!stores.length)return toast('Ask your manager to add a store before sending products.','error');
   p02DispatchStock=null;
-  const defaultItem=['RICE','BRAN','BROKEN'].find(code=>Number(p02Data?.warehouse[code]?.total_warehouse_qty)>0)||'RICE';
+  const codes=['RICE','BRAN','BROKEN'];
+  const defaultItem=(batchId?codes.find(code=>(p02Data?.warehouse[code]?.batches||[]).some(b=>Number(b.batch_id||b.id)===Number(batchId)&&Number(b.warehouse_qty)>.005)):null)||codes.find(code=>Number(p02Data?.warehouse[code]?.total_warehouse_qty)>0)||'RICE';
   modal('Send to Store / Consignment',`<div class="form-grid">${p02Field('cdDate','Date',today(),'date')}<div class="field"><label for="cdStore">Store / Consignee</label><select class="select" id="cdStore">${stores.map(s=>`<option value="${s.id}">${esc(s.store_name)}</option>`).join('')}</select></div><div class="field"><label for="cdItem">Product</label><select class="select" id="cdItem">${['RICE','BRAN','BROKEN'].map(code=>`<option value="${code}" ${code===defaultItem?'selected':''}>${esc((window.palayInventory||[]).find(x=>x.code===code)?.name||code)}</option>`).join('')}</select></div>${p02Field('cdQty','Quantity','','number','min="0.001" step="0.001"')}<div class="field"><label for="cdUnit">Unit</label><select class="select" id="cdUnit">${p02UnitOptions('BAG')}</select></div>${p02Field('cdPrice','Selling Price per Selected Unit','','number','min="0.01" step="0.01"')}</div><p class="p02-input-note" id="p02DispatchAvailability" role="status">Checking warehouse stock…</p><div class="p02-calculation" id="p02DispatchCalculation" aria-live="polite"></div><details class="p02-extra"><summary>Source / Notes</summary><div class="field"><label for="cdBatch">Product Source</label><select class="select" id="cdBatch"></select></div>${p02Field('cdNotes','Notes','','text','maxlength="300"')}</details><div hidden>${['cdAvail','cdKg','cdPerKg','cdValue','cdCommission','cdNet'].map(id=>p02Field(id,id,'','text','readonly')).join('')}</div>`,`<button class="btn soft" onclick="closeModal()">Cancel</button><button class="btn primary" id="p02DispatchReview" onclick="saveConsignmentDispatch()" disabled>Review</button>`);p02MarkModal();
   $('cdDate').onchange=p02LoadDispatchStock;$('cdItem').onchange=p02LoadDispatchStock;$('cdBatch').onchange=p02CalculateDispatch;
   for(const id of ['cdQty','cdPrice','cdUnit'])$(id).addEventListener('input',p02CalculateDispatch);
-  await p02LoadDispatchStock();
+  await p02LoadDispatchStock(batchId);
 };
-async function p02LoadDispatchStock(){
-  const form=$('cdDate');if(!form)return;const seq=++p02DispatchSequence,date=form.value,item=p02Value('cdItem'),previous=p02Value('cdBatch'),pid=currentPid();p02DispatchStock=null;p02CalculateDispatch();if(!date)return;
+async function p02LoadDispatchStock(preferredBatchId=null){
+  const form=$('cdDate');if(!form)return;const seq=++p02DispatchSequence,date=form.value,item=p02Value('cdItem'),previous=typeof preferredBatchId==='number'||typeof preferredBatchId==='string'?String(preferredBatchId):p02Value('cdBatch'),pid=currentPid();p02DispatchStock=null;p02CalculateDispatch();if(!date)return;
   try{
     const r=await api(`/api/palay/sale-availability?projectId=${pid}&itemId=${item}&to=${date}`);
     if(seq!==p02DispatchSequence||form!==$('cdDate')||!form.isConnected||form.value!==date||p02Value('cdItem')!==item||currentPid()!==pid)return;
@@ -318,7 +322,7 @@ function p02CalculateDispatch(){
   $('p02DispatchReview').disabled=!(row&&p02DispatchStock.as_of===p02Value('cdDate')&&Number.isFinite(qty)&&qty>0&&qty*factor<=available+.0001&&Number.isFinite(price)&&price>0&&p02Value('cdStore'));
 }
 consignmentCollectModal = function(id) { p02OperatorPreviousCollect(id); if(p02IsProject())p02SimplifyExistingModal('collect'); };
-projectSettlementModal = async function(kind) { await p02OperatorPreviousProjectSettlement(kind); if(p02IsProject())p02SimplifyExistingModal('project-collect'); };
+projectSettlementModal = async function(kind) { if(!p02IsProject())return p02OperatorPreviousProjectSettlement(kind);const pid=currentPid(),opening=p02OperatorPreviousProjectSettlement(kind),form=$('settleDate');await opening;if(form&&form===$('settleDate')&&form.isConnected&&currentPid()===pid&&p02IsProject())p02SimplifyExistingModal('project-collect'); };
 consignmentSettlementModal = function(id) {
   if (!p02IsProject()) return p02LegacySettlementModal(id);
   const d = (window.consignmentData?.dispatches || []).find(x=>Number(x.id)===Number(id)); if(!d)return toast('Store consignment not found.','error');
@@ -372,7 +376,7 @@ function p02BuildTransaction(kind,id) {
   return {kind,id,route,body,rows,next,pid:currentPid()};
 }
 function p02ReviewCurrent(kind,id=null) {
-  if(p02Posting)return;
+  if(p02Posting||p02Pending||$('p02ReviewStep'))return;
   try {
     const pending=p02BuildTransaction(kind,id), root=$('modalRoot'), body=root.querySelector('.modal-body'), foot=root.querySelector('.modal-foot');if(!body||!foot)return;
     const input=document.createElement('div');input.id='p02InputStep';while(body.firstChild)input.appendChild(body.firstChild);input.hidden=true;body.appendChild(input);
@@ -389,16 +393,22 @@ function p02BackToInput() {
 async function p02PostReviewed() {
   if(p02Posting||!p02Pending||!$('p02FinalPost'))return;
   const pending=p02Pending;if(currentPid()!==pending.pid)return toast('Return to the original project before posting.','error');
+  const review=$('p02ReviewStep'),activeModal=review?.closest('.modal');
+  const sameDialog=()=>review?.isConnected&&activeModal===$('modalRoot').querySelector('.modal');
   p02Posting=true;$('p02FinalPost').disabled=true;$('p02FinalPost').textContent='Posting…';$('modalRoot').querySelectorAll('.modal-head button,.modal-foot button').forEach(b=>b.disabled=true);
   try {
     const result=await api(pending.route,{method:'POST',body:JSON.stringify(pending.body)});
-    p02Pending=null;window.modalDirty=false;p02OperatorPreviousClose();
-    if(currentPid()===pending.pid&&p02IsProject()) {await pageOperations();if(currentPid()===pending.pid&&p02IsProject())p02ShowSuccess(pending,result);}
-    else toast('Transaction posted successfully. Review it in the original P02 project.');
+    if(p02Pending===pending)p02Pending=null;
+    if(sameDialog()) {
+      window.modalDirty=false;const seq=++p02DialogSequence;p02OperatorPreviousClose();
+      if(currentPid()===pending.pid&&p02IsProject()){await pageOperations();if(currentPid()===pending.pid&&p02IsProject()&&seq===p02DialogSequence&&!$('modalRoot').querySelector('.modal'))p02ShowSuccess(pending,result);else toast('Transaction posted successfully. Review it in the original P02 project.');}else toast('Transaction posted successfully. Review it in the original P02 project.');
+    } else toast('Transaction posted successfully. Review it in the original P02 project.');
   } catch(e) {
-    if($('p02PostError'))$('p02PostError').textContent=p02PlainError(e);
-    if($('p02FinalPost')){$('p02FinalPost').disabled=false;$('p02FinalPost').textContent='Post Transaction';}
-    $('modalRoot').querySelectorAll('.modal-head button,.modal-foot button').forEach(b=>b.disabled=false);
+    if(sameDialog()){
+      if($('p02PostError'))$('p02PostError').textContent=p02PlainError(e);
+      if($('p02FinalPost')){$('p02FinalPost').disabled=false;$('p02FinalPost').textContent='Post Transaction';}
+      activeModal.querySelectorAll('.modal-head button,.modal-foot button').forEach(b=>b.disabled=false);
+    }else {if(p02Pending===pending)p02Pending=null;toast(p02PlainError(e),'error');}
   } finally {p02Posting=false;}
 }
 function p02ShowSuccess(pending,result) {
@@ -432,5 +442,6 @@ async function p02BatchHistory(id){await p02SelectView('records');$('p02RecordTy
 function p02ConsignmentDetails(id){const d=p02Data.cs.dispatches.find(x=>Number(x.id)===Number(id));if(!d)return;modal('Store Consignment Details',`<dl>${[['Reference',d.dispatch_no],['Store',d.store_name],['Product / Batch',`${d.item_name} · ${d.batch_code}`],['Sent',`${numFmt(d.qty_sent)} KG`],['Sold',`${numFmt(d.sold_qty)} KG`],['Returned',`${numFmt(d.returned_qty)} KG`],['Outstanding',`${numFmt(d.outstanding_qty)} KG`],['Balance',money(d.unremitted_ar)],['Store Share',`${numFmt(d.commission_rate)}%`]].map(([a,v])=>`<div class="p02-review-row"><dt>${esc(a)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`,`<button class="btn soft" onclick="closeModal()">Close</button><button class="btn primary" onclick="closeModal();p02OpenSalesHistory()">History / Corrections</button>`);p02MarkModal();}
 async function p02SetupModal(){
   if(!p02CanSetup())return;
-  try{const masters=await p02Masters();modal('Manager Setup',`<details class="p02-extra"><summary>Varieties & Labor Groups</summary>${p02MasterMarkup(masters,currentPid())}</details><details class="p02-extra"><summary>Stores / Consignees</summary>${p02Data.cs.consignees.map(s=>`<div class="p02-card-actions"><span>${esc(s.store_name)}</span><button class="btn soft" onclick="consigneeModal(${s.id})">Edit</button></div>`).join('')||p02Empty('No stores added yet.')}<button class="btn soft" onclick="consigneeModal()">Add Store</button></details><details class="p02-extra"><summary>Unassigned Variety</summary><button class="btn soft" onclick="p02AssignVarietyModal()">Assign Source Batch Variety</button></details><details class="p02-extra"><summary>Recovery & Consignment Defaults</summary><p>Drying recovery: ${numFmt(p02Data.cfg.drying_recovery_rate_pct)}%</p><p>Store share: ${numFmt(p02Data.cfg.consignee_commission_pct)}%</p>${roleIs('SUPERADMIN')?'<button class="btn soft" onclick="closeModal();openProjectSettings(\'P02\')">Edit System Defaults</button>':'<p>Ask the Super Admin to change these defaults.</p>'}</details>`,'<button class="btn primary" onclick="closeModal()">Done</button>',true);p02MarkModal();}catch(e){toast(p02PlainError(e),'error');}
+  const seq=++p02DialogSequence,pid=currentPid();
+  try{const masters=await p02Masters();if(seq!==p02DialogSequence||pid!==currentPid()||!p02IsProject()||!p02CanSetup())return;modal('Manager Setup',`<details class="p02-extra"><summary>Varieties & Labor Groups</summary>${p02MasterMarkup(masters,currentPid())}</details><details class="p02-extra"><summary>Stores / Consignees</summary>${p02Data.cs.consignees.map(s=>`<div class="p02-card-actions"><span>${esc(s.store_name)}</span><button class="btn soft" onclick="consigneeModal(${s.id})">Edit</button></div>`).join('')||p02Empty('No stores added yet.')}<button class="btn soft" onclick="consigneeModal()">Add Store</button></details><details class="p02-extra"><summary>Unassigned Variety</summary><button class="btn soft" onclick="p02AssignVarietyModal()">Assign Source Batch Variety</button></details><details class="p02-extra"><summary>Recovery & Consignment Defaults</summary><p>Drying recovery: ${numFmt(p02Data.cfg.drying_recovery_rate_pct)}%</p><p>Store share: ${numFmt(p02Data.cfg.consignee_commission_pct)}%</p>${roleIs('SUPERADMIN')?'<button class="btn soft" onclick="closeModal();openProjectSettings(\'P02\')">Edit System Defaults</button>':'<p>Ask the Super Admin to change these defaults.</p>'}</details>`,'<button class="btn primary" onclick="closeModal()">Done</button>',true);p02MarkModal();}catch(e){toast(p02PlainError(e),'error');}
 }

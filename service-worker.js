@@ -1,4 +1,4 @@
-const CACHE='coopledger-github-pwa-v3.4.0-p02-operator-v1-20261006';
+const CACHE='coopledger-github-pwa-v3.4.0-p02-operator-v2-20261007';
 const SHELL=['./index.html','./p02-workflow.js','./p02-operator.js','./p02-operator.css','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('coopledger-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
